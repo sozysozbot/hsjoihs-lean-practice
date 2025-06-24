@@ -20,17 +20,13 @@ def add (a b : TropicalNat) : TropicalNat :=
   | a, .infinity => a
   | .fromNat m, .fromNat n => fromNat (min m n)
 
-instance : Add TropicalNat where
-  add a b := add a b
+instance : Add TropicalNat := ⟨add⟩
 
-instance : Mul TropicalNat where
-  mul a b := mul a b
+instance : Mul TropicalNat := ⟨mul⟩
 
-instance : Zero TropicalNat where
-  zero := infinity
+instance : Zero TropicalNat := ⟨infinity⟩
 
-instance : One TropicalNat where
-  one := fromNat 0
+instance : One TropicalNat := ⟨fromNat 0⟩
 
 infix:70 " ⊕τ " => add
 infix:90 " ⊗τ " => mul
@@ -58,11 +54,9 @@ theorem add_comm (m n : TropicalNat) : m ⊕τ n = n ⊕τ m := by
   | _, .infinity => simp [zero_add, add_zero]
   | .fromNat m', .fromNat n' => simp [add, Nat.min_comm]
 
-instance : Std.Associative (· ⊕τ ·) where
-  assoc := add_assoc
+instance : Std.Associative (· ⊕τ ·) := ⟨add_assoc⟩
 
-instance : Std.Commutative (· ⊕τ ·) where
-  comm := add_comm
+instance : Std.Commutative (· ⊕τ ·) := ⟨add_comm⟩
 
 theorem mul_comm (m n : TropicalNat) : m ⊗τ n = n ⊗τ m := by
   match m, n with
@@ -70,8 +64,7 @@ theorem mul_comm (m n : TropicalNat) : m ⊗τ n = n ⊗τ m := by
   | _, .infinity => simp [zero_mul, mul_zero]
   | .fromNat m', .fromNat n' => simp only [mul, Nat.add_comm]
 
-instance : Std.Commutative (α := TropicalNat) (· ⊗τ ·) where
-  comm := mul_comm
+instance : Std.Commutative (· ⊗τ ·) := ⟨mul_comm⟩
 
 theorem mul_assoc (m n k : TropicalNat) : (m ⊗τ n) ⊗τ k = m ⊗τ (n ⊗τ k) := by
   match m, n, k with
