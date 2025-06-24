@@ -4,216 +4,158 @@ inductive TropicalNat where
   | fromNat : Nat → TropicalNat
   | infinity
 
+namespace TropicalNat
+
 -- multiplication in tropical arithmetic is addition in normal arithmetic
-def TropicalNat.mul (a b : TropicalNat) : TropicalNat :=
-  match b with
-  | .infinity => TropicalNat.infinity
-  | .fromNat n => match a with
-    | .infinity => TropicalNat.infinity
-    | .fromNat m => TropicalNat.fromNat (m + n)
+def mul (a b : TropicalNat) : TropicalNat :=
+  match a, b with
+  | .infinity, _
+  | _, .infinity => infinity
+  | .fromNat a, .fromNat b => fromNat (a + b)
 
 -- addition in tropical arithmetic is minimum in normal arithmetic
-def TropicalNat.add (a b : TropicalNat) : TropicalNat :=
+def add (a b : TropicalNat) : TropicalNat :=
   match a, b with
   | .infinity, b => b
   | a, .infinity => a
-  | .fromNat m, .fromNat n => TropicalNat.fromNat (min m n)
+  | .fromNat m, .fromNat n => fromNat (min m n)
 
-instance : Add TropicalNat where
-  add a b := TropicalNat.add a b
+instance : Add TropicalNat := ⟨add⟩
 
-instance : Mul TropicalNat where
-  mul a b := TropicalNat.mul a b
+instance : Mul TropicalNat := ⟨mul⟩
 
-instance : Zero TropicalNat where
-  zero := TropicalNat.infinity
+instance : Zero TropicalNat := ⟨infinity⟩
 
-instance : One TropicalNat where
-  one := TropicalNat.fromNat 0
+instance : One TropicalNat := ⟨fromNat 0⟩
 
-infix:70 " ⊕τ " => TropicalNat.add
-infix:90 " ⊗τ " => TropicalNat.mul
+infix:70 " ⊕τ " => add
+infix:90 " ⊗τ " => mul
 
-@[simp] theorem TropicalNat.add_zero (a : TropicalNat) : a ⊕τ TropicalNat.infinity = a := by
-  match a with
-  | .infinity => rfl
-  | .fromNat n => rfl
+@[simp] theorem add_zero (a : TropicalNat) : a ⊕τ infinity = a := by rcases a <;> rfl;
 
-@[simp] theorem TropicalNat.zero_add (a : TropicalNat) : TropicalNat.infinity ⊕τ a = a := by
-  match a with
-  | .infinity => rfl
-  | .fromNat n => rfl
+@[simp] theorem zero_add (a : TropicalNat) : infinity ⊕τ a = a := by rcases a <;> rfl;
 
-@[simp] theorem TropicalNat.mul_zero (a : TropicalNat) : a ⊗τ TropicalNat.infinity = TropicalNat.infinity := by
-  match a with
-  | .infinity => rfl
-  | .fromNat n => rfl
+@[simp] theorem mul_zero (a : TropicalNat) : a ⊗τ infinity = infinity := by rcases a <;> rfl;
 
-@[simp] theorem TropicalNat.zero_mul (a : TropicalNat) : TropicalNat.infinity ⊗τ a = TropicalNat.infinity := by
-  match a with
-  | .infinity => rfl
-  | .fromNat n => rfl
+@[simp] theorem zero_mul (a : TropicalNat) : infinity ⊗τ a = infinity := by rcases a <;> rfl;
 
-theorem TropicalNat.add_assoc (m n k : TropicalNat) : (m ⊕τ n) ⊕τ k = m ⊕τ (n ⊕τ k) := by
-  match m with
-  | .infinity => simp only [TropicalNat.zero_add, TropicalNat.zero_add]
-  | .fromNat m' =>
-    match n with
-    | .infinity =>
-      simp only [add_zero, zero_add]
-    | .fromNat n' =>
-      match k with
-      | .infinity =>
-        simp only [add_zero, zero_add]
-      | .fromNat k' =>
-        simp only [TropicalNat.add, Nat.min_assoc]
+theorem add_assoc (m n k : TropicalNat) : (m ⊕τ n) ⊕τ k = m ⊕τ (n ⊕τ k) := by
+  match m, n, k with
+  | .infinity, _, _
+  | _, .infinity, _
+  | _, _, .infinity =>
+    simp [zero_mul, add_zero]
+  | .fromNat m, .fromNat n, .fromNat k =>
+    simp only [add, Nat.min_assoc]
 
-theorem TropicalNat.add_comm (m n : TropicalNat) : m ⊕τ n = n ⊕τ m := by
+theorem add_comm (m n : TropicalNat) : m ⊕τ n = n ⊕τ m := by
   match m, n with
-  | .infinity, _ => simp only [TropicalNat.zero_add, TropicalNat.add_zero]
-  | _, .infinity => simp only [TropicalNat.add_zero, TropicalNat.zero_add]
-  | .fromNat m', .fromNat n' => rw [TropicalNat.add, TropicalNat.add, Nat.min_comm]
+  | .infinity, _
+  | _, .infinity => simp [zero_add, add_zero]
+  | .fromNat m', .fromNat n' => simp [add, Nat.min_comm]
 
-instance : Std.Associative (α := TropicalNat) (· ⊕τ ·) where
-  assoc := TropicalNat.add_assoc
+instance : Std.Associative (· ⊕τ ·) := ⟨add_assoc⟩
 
-instance : Std.Commutative (α := TropicalNat) (· ⊕τ ·) where
-  comm := TropicalNat.add_comm
+instance : Std.Commutative (· ⊕τ ·) := ⟨add_comm⟩
 
-theorem TropicalNat.mul_comm (m n : TropicalNat) : m ⊗τ n = n ⊗τ m := by
+theorem mul_comm (m n : TropicalNat) : m ⊗τ n = n ⊗τ m := by
   match m, n with
-  | .infinity, _ => simp only [TropicalNat.zero_mul, TropicalNat.mul_zero]
-  | _, .infinity => simp only [TropicalNat.mul_zero, TropicalNat.zero_mul]
-  | .fromNat m', .fromNat n' =>
-    rw [TropicalNat.mul, TropicalNat.mul, Nat.add_comm]
+  | .infinity, _
+  | _, .infinity => simp [zero_mul, mul_zero]
+  | .fromNat m', .fromNat n' => simp only [mul, Nat.add_comm]
 
-instance : Std.Commutative (α := TropicalNat) (· ⊗τ ·) where
-  comm := TropicalNat.mul_comm
+instance : Std.Commutative (· ⊗τ ·) := ⟨mul_comm⟩
 
-theorem TropicalNat.mul_assoc (m n k : TropicalNat) : (m ⊗τ n) ⊗τ k = m ⊗τ (n ⊗τ k) := by
-  match m with
-  | .infinity => simp only [TropicalNat.zero_mul, TropicalNat.mul_zero]
-  | .fromNat m' =>
-    match n with
-    | .infinity =>
-      simp only [TropicalNat.mul_zero, TropicalNat.zero_mul]
-    | .fromNat n' =>
-      match k with
-      | .infinity =>
-        simp only [TropicalNat.mul_zero, TropicalNat.zero_mul]
-      | .fromNat k' =>
-        simp only [TropicalNat.mul, Nat.add_assoc]
+theorem mul_assoc (m n k : TropicalNat) : (m ⊗τ n) ⊗τ k = m ⊗τ (n ⊗τ k) := by
+  match m, n, k with
+  | .infinity, _, _
+  | _, .infinity, _
+  | _, _, .infinity =>
+    simp [zero_mul, add_zero]
+  | .fromNat m, .fromNat n, .fromNat k =>
+    simp only [mul, Nat.add_assoc]
 
-instance : Std.Associative (α := TropicalNat) (· ⊗τ ·) where
-  assoc := TropicalNat.mul_assoc
+instance : Std.Associative (· ⊗τ ·) := ⟨mul_assoc⟩
 
 theorem distrib_succ (n k : Nat): min n k + 1 = min (n + 1) (k + 1) := by
-  repeat rw [Nat.min_def]
-  by_cases h : n ≤ k
-  case pos =>
-    simp [h]
-  case neg =>
-    simp [h]
+  simp only [Nat.min_def, Nat.add_le_add_iff_right]
+  by_cases h : n ≤ k <;> simp [h]
 
-theorem TropicalNat.left_distrib (m n k : TropicalNat) :
-  m ⊗τ (n ⊕τ k) = m ⊗τ n ⊕τ m ⊗τ k := by
-  match m with
-  | .infinity =>
-    simp only [TropicalNat.zero_mul, TropicalNat.mul_zero, TropicalNat.add_zero]
-  | .fromNat m' =>
-    match n with
-    | .infinity =>
-      simp only [TropicalNat.zero_add, TropicalNat.add_zero, TropicalNat.mul_zero]
-    | .fromNat n' =>
-      match k with
-      | .infinity =>
-        simp only [TropicalNat.zero_add, TropicalNat.add_zero, TropicalNat.mul_zero]
-      | .fromNat k' =>
-        simp only [TropicalNat.mul, TropicalNat.add, Nat.add_assoc, Nat.add_comm]
-        have h : m' + min n' k' = min (m' + n') (m' + k') := by
-          induction m' with
-          | zero => simp
-          | succ l h =>
-            rw [show l + 1 + min n' k' = l + min n' k' + 1 from by ac_rfl]
-            rw [show l + 1 + n' = l + n' + 1 from by ac_rfl]
-            rw [show l + 1 + k' = l + k' + 1 from by ac_rfl]
-            rw [← distrib_succ]
-            rw [h]
-        rw [h]
+theorem left_distrib (m n k : TropicalNat) : m ⊗τ (n ⊕τ k) = m ⊗τ n ⊕τ m ⊗τ k := by
+  match m, n, k with
+  | .infinity, _, _
+  | _, .infinity, _
+  | _, _, .infinity =>
+    simp [zero_mul, add_zero]
+  | .fromNat m, .fromNat n, .fromNat k =>
+    simp [mul, add, Nat.add_min_add_left];
 
-theorem TropicalNat.right_distrib (m n k : TropicalNat) :
-  (m ⊕τ n) ⊗τ k = m ⊗τ k ⊕τ n ⊗τ k := by
-  rw [TropicalNat.add_comm m n]
-  rw [TropicalNat.add_comm (m ⊗τ k) (n ⊗τ k)]
-  rw [TropicalNat.mul_comm n k]
-  rw [TropicalNat.mul_comm m k]
-  rw [TropicalNat.mul_comm (n ⊕τ m) k]
-  exact TropicalNat.left_distrib k n m
+theorem right_distrib (m n k : TropicalNat) : (m ⊕τ n) ⊗τ k = m ⊗τ k ⊕τ n ⊗τ k := calc
+  (m ⊕τ n) ⊗τ k = (n ⊕τ m) ⊗τ k    := by simp [add_comm]
+  _             = k ⊗τ (n ⊕τ m)    := by simp [mul_comm]
+  _             = k ⊗τ n ⊕τ k ⊗τ m := by apply left_distrib
+  _             = n ⊗τ k ⊕τ m ⊗τ k := by simp [mul_comm]
+  _             = m ⊗τ k ⊕τ n ⊗τ k := by simp [add_comm]
 
-theorem TropicalNat.one_mul (n : TropicalNat) : TropicalNat.fromNat 0 ⊗τ n = n := by
+theorem one_mul (n : TropicalNat) : fromNat 0 ⊗τ n = n := by
   match n with
   | .infinity => rfl
-  | .fromNat n' => rw [TropicalNat.mul, Nat.zero_add]
+  | .fromNat n' => rw [mul, Nat.zero_add]
 
-theorem TropicalNat.mul_one (n : TropicalNat) : n ⊗τ TropicalNat.fromNat 0 = n := by
+theorem mul_one (n : TropicalNat) : n ⊗τ fromNat 0 = n := by
   match n with
   | .infinity => rfl
-  | .fromNat n' => rw [TropicalNat.mul, Nat.add_zero]
+  | .fromNat n' => rw [mul, Nat.add_zero]
 
-def TropicalNat.nsmul := fun n a =>
-    match n with
-    | 0 => TropicalNat.infinity
-    | Nat.succ _ => a -- minimum of n copies of a is just a
+def nsmul := fun n a =>
+  match n with
+  | 0     => infinity
+  | _ + 1 => a -- minimum of n copies of a is just a
 
-theorem TropicalNat.nsmul_zero (a : TropicalNat) : TropicalNat.nsmul 0 a = TropicalNat.infinity := by
-  rfl
+theorem nsmul_zero (a : TropicalNat) : nsmul 0 a = infinity := rfl
 
-theorem TropicalNat.nsmul_n_zero (n : Nat) : TropicalNat.nsmul n TropicalNat.infinity = TropicalNat.infinity := by
-  cases n with
-  | zero => rfl
-  | succ n' => rw [TropicalNat.nsmul]
+theorem nsmul_n_zero (n : Nat) : nsmul n infinity = infinity := by
+  match n with
+  | 0 => rfl
+  | n + 1 => rw [nsmul]
 
-@[simp] theorem TropicalNat.add_self (a : TropicalNat) : a ⊕τ a = a := by
+@[simp] theorem add_self (a : TropicalNat) : a ⊕τ a = a := by
   match a with
   | .infinity => rfl
-  | .fromNat n =>
-    rw [TropicalNat.add, Nat.min_self]
+  | .fromNat n => rw [add, Nat.min_self]
 
 
 instance : Semiring TropicalNat where
   add := (· ⊕τ ·)
   mul := (· ⊗τ ·)
 
-  zero := TropicalNat.infinity
-  one  := TropicalNat.fromNat 0
+  zero := infinity
+  one  := fromNat 0
 
-  add_comm    := TropicalNat.add_comm
-  add_assoc   := TropicalNat.add_assoc
-  zero_add    := TropicalNat.zero_add
-  add_zero    := TropicalNat.add_zero
+  add_comm    := add_comm
+  add_assoc   := add_assoc
+  zero_add    := zero_add
+  add_zero    := add_zero
 
-  mul_assoc   := TropicalNat.mul_assoc
-  one_mul     := TropicalNat.one_mul
-  mul_one     := TropicalNat.mul_one
-  zero_mul    := TropicalNat.zero_mul
-  mul_zero    := TropicalNat.mul_zero
+  mul_assoc   := mul_assoc
+  one_mul     := one_mul
+  mul_one     := mul_one
+  zero_mul    := zero_mul
+  mul_zero    := mul_zero
 
-  left_distrib  := TropicalNat.left_distrib
-  right_distrib := TropicalNat.right_distrib
+  left_distrib  := left_distrib
+  right_distrib := right_distrib
 
-  nsmul := TropicalNat.nsmul
-  nsmul_zero := TropicalNat.nsmul_zero
+  nsmul := nsmul
+  nsmul_zero := nsmul_zero
   nsmul_succ := by
-    intro n a
-    match a with
-    | .infinity =>
-      repeat rw [TropicalNat.nsmul_n_zero]
-      rfl
-    | .fromNat m =>
-      simp only [TropicalNat.nsmul]
-      cases n with
-      | zero => rfl
-      | succ n' =>
-        simp only [TropicalNat.nsmul]
-        rw [show TropicalNat.fromNat m + TropicalNat.fromNat m = TropicalNat.fromNat m ⊕τ TropicalNat.fromNat m by rfl]
-        rw [TropicalNat.add_self]
+    intro n a;
+    match n, a with
+    | _, .infinity=> simp only [nsmul_n_zero]; rfl
+    | 0, .fromNat m => dsimp [nsmul]; rfl;
+    | n + 1, .fromNat m =>
+      dsimp [nsmul];
+      rw [show fromNat m + fromNat m = fromNat m ⊕τ fromNat m by rfl]
+      simp [add_self]
+
+end TropicalNat
