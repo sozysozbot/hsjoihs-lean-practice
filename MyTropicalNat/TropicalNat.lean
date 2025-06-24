@@ -75,8 +75,7 @@ theorem mul_assoc (m n k : TropicalNat) : (m ⊗τ n) ⊗τ k = m ⊗τ (n ⊗τ
   | .fromNat m, .fromNat n, .fromNat k =>
     simp only [mul, Nat.add_assoc]
 
-instance : Std.Associative (· ⊗τ ·) where
-  assoc := mul_assoc
+instance : Std.Associative (· ⊗τ ·) := ⟨mul_assoc⟩
 
 theorem distrib_succ (n k : Nat): min n k + 1 = min (n + 1) (k + 1) := by
   simp only [Nat.min_def, Nat.add_le_add_iff_right]
